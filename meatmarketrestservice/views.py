@@ -1,57 +1,41 @@
-from django.http import Http404
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework import generics
+from rest_framework import mixins
 
 from meatmarketrestservice.models import Item
 from meatmarketrestservice.serializers import ItemSerializer
 
 
-# noinspection PyMethodMayBeStatic
-class ItemList(APIView):
+class ItemList(mixins.ListModelMixin,
+               mixins.CreateModelMixin,
+               generics.GenericAPIView):
     """
     List all items or create a new item
     """
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
 
-    def get(self, request, format=None):
-        items = Item.objects.all()
-        serializer = ItemSerializer(items, many=True)
-        return Response(serializer.data)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
-    def post(self, request, format=None):
-        serializer = ItemSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
 
-# noinspection PyMethodMayBeStatic
-class ItemDetail(APIView):
+class ItemDetail(mixins.RetrieveModelMixin,
+                 mixins.UpdateModelMixin,
+                 mixins.DestroyModelMixin,
+                 generics.GenericAPIView):
     """
     Retrieve, update or delete an item
     """
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
 
-    def get_object(self, pk):
-        try:
-            item = Item.objects.get(pk=pk)
-        except Item.DoesNotExist:
-            raise Http404
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
-    def get(self, request, pk, format=None):
-        item = self.get_object(pk)
-        serializer = ItemSerializer(item)
-        return Response(serializer.data)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
-    def put(self, request, pk, format=None):
-        item = self.get_object(pk)
-        serializer = ItemSerializer(item, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, format=None):
-        item = self.get_object(pk)
-        item.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
